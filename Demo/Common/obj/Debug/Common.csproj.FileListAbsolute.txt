@@ -31,3 +31,12 @@ D:\_项目代码\ORM\Demo\Common\bin\Debug\Common.pdb
 D:\_项目代码\ORM\Demo\Common\obj\Debug\Common.csprojResolveAssemblyReference.cache
 D:\_项目代码\ORM\Demo\Common\obj\Debug\Common.dll
 D:\_项目代码\ORM\Demo\Common\obj\Debug\Common.pdb
+D:\_程序\我的ORM\Demo\Common\bin\Debug\Common.dll
+D:\_程序\我的ORM\Demo\Common\bin\Debug\Common.pdb
+D:\_程序\我的ORM\Demo\Common\obj\Debug\Common.dll
+D:\_程序\我的ORM\Demo\Common\obj\Debug\Common.pdb
+C:\Users\Administrator\Desktop\DBHelper\Demo\Common\bin\Debug\Common.dll
+C:\Users\Administrator\Desktop\DBHelper\Demo\Common\bin\Debug\Common.pdb
+C:\Users\Administrator\Desktop\DBHelper\Demo\Common\obj\Debug\Common.csprojResolveAssemblyReference.cache
+C:\Users\Administrator\Desktop\DBHelper\Demo\Common\obj\Debug\Common.dll
+C:\Users\Administrator\Desktop\DBHelper\Demo\Common\obj\Debug\Common.pdb

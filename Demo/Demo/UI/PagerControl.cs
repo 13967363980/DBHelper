@@ -8,7 +8,7 @@ using System.Text;
 using System.Windows.Forms;
 using Models;
 
-namespace XXPLClient.UI
+namespace UI
 {
     public partial class PagerControl : UserControl
     {

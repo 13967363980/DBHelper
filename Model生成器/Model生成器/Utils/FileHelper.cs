@@ -32,5 +32,25 @@ namespace Utils
         }
         #endregion
 
+        #region 读文件
+        /// <summary>
+        /// 读文件
+        /// </summary>
+        public static string ReadFile(string path)
+        {
+            string result = string.Empty;
+
+            using (FileStream fs = new FileStream(path, FileMode.Open, FileAccess.Read))
+            {
+                using (StreamReader sr = new StreamReader(fs))
+                {
+                    result = sr.ReadToEnd();
+                }
+            }
+
+            return result;
+        }
+        #endregion
+
     }
 }

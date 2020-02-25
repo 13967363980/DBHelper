@@ -10,6 +10,7 @@ using System.Windows.Forms;
 using DAL;
 using DBUtil;
 using Models;
+using System.Threading;
 
 namespace Demo
 {
@@ -17,6 +18,7 @@ namespace Demo
     {
         private TemplateDal m_TemplateDal = new TemplateDal();
         private TestDal m_TestDal = new TestDal();
+        private TestMySqlDal m_TestMySqlDal = new TestMySqlDal();
 
         public Form1()
         {
@@ -26,55 +28,6 @@ namespace Demo
         private void Form1_Load(object sender, EventArgs e)
         {
             BindList();
-        }
-
-        //测试新增
-        private void button1_Click(object sender, EventArgs e)
-        {
-            int k = 0;
-            for (int i = 0; i < 100; i++)
-            {
-                Task.Factory.StartNew(new Action(() =>
-                {
-                    try
-                    {
-                        DBHelper.BeginTransaction();
-
-                        BS_Template model = new BS_Template();
-                        model.id = m_TemplateDal.GetMaxId().ToString();
-                        model.code = k.ToString("0000");
-                        model.name = "测试" + k.ToString();
-                        model.remarks = "测试" + k.ToString();
-                        model.type = ((int)Enums.TemplateType.Notice).ToString();
-                        m_TemplateDal.Insert(model);
-                        //throw new Exception("a");
-
-                        BS_Test test = new BS_Test();
-                        test.id = m_TestDal.GetMaxId().ToString();
-                        test.code = "测试" + k.ToString();
-                        test.name = "测试" + k.ToString();
-                        test.remarks = "测试" + k.ToString();
-                        m_TestDal.Insert(test);
-
-                        DBHelper.CommitTransaction();
-
-                        k++;
-                        if (k == 100)
-                        {
-                            MessageBox.Show("插入数据成功");
-                            this.Invoke(new InvokeDelegate(() =>
-                            {
-                                BindList();
-                            }));
-                        }
-                    }
-                    catch (Exception ex)
-                    {
-                        DBHelper.RollbackTransaction();
-                        MessageBox.Show(ex.Message);
-                    }
-                }));
-            }
         }
 
         #region 绑定列表
@@ -136,6 +89,55 @@ namespace Demo
             BindList();
         }
 
+        //测试新增
+        private void button1_Click(object sender, EventArgs e)
+        {
+            int k = 0;
+            for (int i = 0; i < 100; i++)
+            {
+                Task.Factory.StartNew(new Action(() =>
+                {
+                    try
+                    {
+                        DBHelper.BeginTransaction();
+
+                        BS_Template model = new BS_Template();
+                        model.id = m_TemplateDal.GetMaxId().ToString();
+                        model.code = k.ToString("0000");
+                        model.name = "测试" + k.ToString();
+                        model.remarks = "测试" + k.ToString();
+                        model.type = ((int)Enums.TemplateType.Notice).ToString();
+                        m_TemplateDal.Insert(model);
+                        //throw new Exception("a");
+
+                        BS_Test test = new BS_Test();
+                        test.id = m_TestDal.GetMaxId().ToString();
+                        test.code = "测试" + k.ToString();
+                        test.name = "测试" + k.ToString();
+                        test.remarks = "测试" + k.ToString();
+                        m_TestDal.Insert(test);
+
+                        DBHelper.CommitTransaction();
+
+                        k++;
+                        if (k == 100)
+                        {
+                            MessageBox.Show("插入数据成功");
+                            this.Invoke(new InvokeDelegate(() =>
+                            {
+                                BindList();
+                            }));
+                        }
+                    }
+                    catch (Exception ex)
+                    {
+                        DBHelper.RollbackTransaction();
+                        MessageBox.Show(ex.Message);
+                    }
+                }));
+            }
+        }
+
         //测试修改
         private void button2_Click(object sender, EventArgs e)
         {
@@ -162,6 +164,7 @@ namespace Demo
             }
         }
 
+        //测试删除
         private void button3_Click(object sender, EventArgs e)
         {
             try
@@ -182,7 +185,63 @@ namespace Demo
                 MessageBox.Show("修改失败：" + ex.Message);
             }
         }
-    }
+
+        private void btnTestMySQL_Click(object sender, EventArgs e)
+        {
+            try
+            {
+                int k = 0;
+                for (int i = 0; i < 10; i++)
+                {
+                    Task.Factory.StartNew(new Action(() =>
+                    {
+                        try
+                        {
+                            DBHelper.BeginTransaction();
+
+                            utils_test model = new utils_test();
+                            model.code = k.ToString("0000");
+                            model.name = "测试" + k.ToString();
+                            model.text = "测试" + k.ToString();
+                            model.content = new byte[10];
+                            model.content[1] = (byte)100;
+                            model.content[2] = (byte)99;
+                            model.content[3] = (byte)98;
+                            m_TestMySqlDal.Insert(model);
+
+                            DBHelper.CommitTransaction();
+
+                            k++;
+                            if (k == 100)
+                            {
+                                MessageBox.Show("插入数据成功");
+                                this.Invoke(new InvokeDelegate(() =>
+                                {
+                                    BindList();
+                                }));
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            DBHelper.RollbackTransaction();
+                            MessageBox.Show(ex.Message);
+                        }
+                    }));
+                }
+
+                Task.Factory.StartNew(() =>
+                {
+                    Thread.Sleep(100);
+                    List<utils_test> list = m_TestMySqlDal.GetList();
+                    MessageBox.Show("成功，list数量：" + list.Count);
+                });
+            }
+            catch (Exception ex)
+            {
+                MessageBox.Show(ex.Message);
+            }
+        }
+    } //end of class Form1
 
     /// <summary>
     /// 跨线程访问控件的委托

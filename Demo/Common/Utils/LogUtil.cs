@@ -1,9 +1,9 @@
 ﻿using System;
 using System.Configuration;
 using System.IO;
-using System.Threading;
+using System.Threading.Tasks;
 
-namespace CommonDll
+namespace Utils
 {
     /// <summary>
     /// 写日志类
@@ -89,13 +89,13 @@ namespace CommonDll
         /// </summary>
         public static void LogError(string log)
         {
-            new Thread(new ParameterizedThreadStart((obj) =>
+            Task.Factory.StartNew(() =>
             {
                 lock (_lock)
                 {
                     WriteFile("[Error] " + log, CreateLogPath());
                 }
-            })).Start();
+            });
         }
         #endregion
 
@@ -105,10 +105,13 @@ namespace CommonDll
         /// </summary>
         public static void Log(string log)
         {
-            lock (_lock)
+            Task.Factory.StartNew(() =>
             {
-                WriteFile("[Info]  " + log, CreateLogPath());
-            }
+                lock (_lock)
+                {
+                    WriteFile("[Info]  " + log, CreateLogPath());
+                }
+            });
         }
         #endregion
 

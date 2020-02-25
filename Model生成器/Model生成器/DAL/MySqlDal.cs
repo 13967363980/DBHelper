@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -132,6 +132,9 @@ namespace DAL
                     break;
                 case "longtext":
                     data_type = "string";
+                    break;
+                case "blob":
+                    data_type = "byte[]";
                     break;
                 case "datetime":
                     if (column["notnull"] == "1")

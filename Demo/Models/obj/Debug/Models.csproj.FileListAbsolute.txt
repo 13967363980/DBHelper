@@ -3,3 +3,12 @@ D:\_项目代码\ORM\Demo\Models\bin\Debug\Models.pdb
 D:\_项目代码\ORM\Demo\Models\obj\Debug\Models.csprojResolveAssemblyReference.cache
 D:\_项目代码\ORM\Demo\Models\obj\Debug\Models.dll
 D:\_项目代码\ORM\Demo\Models\obj\Debug\Models.pdb
+D:\_程序\我的ORM\Demo\Models\bin\Debug\Models.dll
+D:\_程序\我的ORM\Demo\Models\bin\Debug\Models.pdb
+D:\_程序\我的ORM\Demo\Models\obj\Debug\Models.dll
+D:\_程序\我的ORM\Demo\Models\obj\Debug\Models.pdb
+C:\Users\Administrator\Desktop\DBHelper\Demo\Models\bin\Debug\Models.dll
+C:\Users\Administrator\Desktop\DBHelper\Demo\Models\bin\Debug\Models.pdb
+C:\Users\Administrator\Desktop\DBHelper\Demo\Models\obj\Debug\Models.csprojResolveAssemblyReference.cache
+C:\Users\Administrator\Desktop\DBHelper\Demo\Models\obj\Debug\Models.dll
+C:\Users\Administrator\Desktop\DBHelper\Demo\Models\obj\Debug\Models.pdb

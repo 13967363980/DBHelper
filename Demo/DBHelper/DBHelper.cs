@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -11,13 +11,24 @@ using System.Data.SQLite;
 using System.Reflection;
 using System.Text;
 using System.Text.RegularExpressions;
-using Models;
 using MySql.Data.MySqlClient;
+using System.Data.OleDb;
+using Models;
 
-/* ---------------------------------------------
+/* ----------------------------------------------------------------------
  * 作    者：suxiang
  * 创建日期：2016年11月23日
- * --------------------------------------------- */
+ * 更新日期：2019年11月30日
+ * 
+ * 支持Oracle、MSSQL、MySQL、SQLite、Access数据库
+ * 
+ * 注意引用的MySql.Data.dll、System.Data.SQLite.dll的版本，32位还是64位
+ * 有的System.Data.SQLite.dll版本需要依赖SQLite.Interop.dll
+ * 
+ * 需要配套的PagerModel、IsDBFieldAttribute、IsIdAttribute类
+ * 
+ * 为方便使用，需要配套的Model生成器
+ * ---------------------------------------------------------------------- */
 
 namespace DBUtil
 {
@@ -73,6 +84,9 @@ namespace DBUtil
                 case "sqlite":
                     command = new SQLiteCommand();
                     break;
+                case "access":
+                    command = new OleDbCommand();
+                    break;
             }
 
             return command;
@@ -102,6 +116,10 @@ namespace DBUtil
                     command = new SQLiteCommand(sql);
                     command.Connection = conn;
                     break;
+                case "access":
+                    command = new OleDbCommand(sql);
+                    command.Connection = conn;
+                    break;
             }
 
             return command;
@@ -129,6 +147,9 @@ namespace DBUtil
                     break;
                 case "sqlite":
                     conn = new SQLiteConnection(m_ConnectionString);
+                    break;
+                case "access":
+                    conn = new OleDbConnection(m_ConnectionString);
                     break;
             }
 
@@ -162,6 +183,10 @@ namespace DBUtil
                     dataAdapter = new SQLiteDataAdapter();
                     dataAdapter.SelectCommand = cmd;
                     break;
+                case "access":
+                    dataAdapter = new OleDbDataAdapter();
+                    dataAdapter.SelectCommand = cmd;
+                    break;
             }
 
             return dataAdapter;
@@ -184,6 +209,8 @@ namespace DBUtil
                     return "@";
                 case "sqlite":
                     return ":";
+                case "access":
+                    return "@";
             }
             return ":";
         }
@@ -210,6 +237,9 @@ namespace DBUtil
                     break;
                 case "sqlite":
                     dbParameter = new SQLiteParameter(name, vallue);
+                    break;
+                case "access":
+                    dbParameter = new OleDbParameter(name, vallue);
                     break;
             }
 
@@ -391,7 +421,8 @@ namespace DBUtil
         /// <param name="sql">sql</param>
         public static void SqlFilter(ref string sql)
         {
-            List<string> keywordList = new List<string>() { 
+            sql = sql.Trim();
+            List<string> keywordList = new List<string>() {
                 "net localgroup",
                 "net user",
                 "xp_cmdshell",
@@ -408,7 +439,7 @@ namespace DBUtil
                 "delete",
                 "select"};
             string ignore = string.Empty;
-            string upperSql = sql.ToUpper().Trim();
+            string upperSql = sql.ToUpper();
             foreach (string keyword in keywordList)
             {
                 if (upperSql.IndexOf(keyword.ToUpper()) == 0)
@@ -418,9 +449,9 @@ namespace DBUtil
             }
             foreach (string keyword in keywordList)
             {
-                if (ignore.ToUpper() == keyword.ToUpper()) continue;
+                if (ignore == "select" && ignore == keyword) continue;
                 Regex regex = new Regex(keyword, RegexOptions.IgnoreCase);
-                sql = regex.Replace(sql, string.Empty);
+                sql = sql.Substring(0, ignore.Length) + regex.Replace(sql.Substring(ignore.Length), string.Empty);
             }
         }
         #endregion
@@ -562,6 +593,9 @@ namespace DBUtil
                 case "sqlite":
                     sql = string.Format("SELECT Max(cast({0} as int)) FROM {1}", key, type.Name);
                     break;
+                case "access":
+                    sql = string.Format("SELECT Max({0}) FROM {1}", key, type.Name);
+                    break;
             }
 
             using (DbConnection conn = GetConnection())
@@ -617,7 +651,7 @@ namespace DBUtil
             int savedCount = 0;
             foreach (PropertyInfo propertyInfo in propertyInfoList)
             {
-                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && autoIncrement) return;
+                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && autoIncrement) continue;
                 if (propertyInfo.GetCustomAttributes(typeof(IsDBFieldAttribute), false).Length > 0)
                 {
                     propertyNameList.Add(propertyInfo.Name);
@@ -632,7 +666,7 @@ namespace DBUtil
             for (int i = 0; i < propertyInfoList.Length && savedCount > 0; i++)
             {
                 PropertyInfo propertyInfo = propertyInfoList[i];
-                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && autoIncrement) return;
+                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && autoIncrement) continue;
                 if (propertyInfo.GetCustomAttributes(typeof(IsDBFieldAttribute), false).Length > 0)
                 {
                     object val = propertyInfo.GetValue(obj, null);
@@ -1263,6 +1297,25 @@ namespace DBUtil
                         sb.AppendFormat(" limit {0} offset {1}", pageSize, startRow);
                         #endregion
                         break;
+                    case "access":
+                        #region 分页查询语句
+                        commandText = string.Format("select count(*) from ({0}) T", sql);
+                        cmd = GetCommand(commandText, connection);
+                        pagerModel.totalRows = int.Parse(cmd.ExecuteScalar().ToString());
+
+                        endRow = pageSize * currentPage;
+                        startRow = pageSize * currentPage > pagerModel.totalRows ? pagerModel.totalRows - pageSize * (currentPage - 1) : pageSize;
+                        if (startRow <= 0) { pagerModel.result = new List<T>(); return pagerModel; }
+                        string[] orderbyArr = string.Format("{0} asc", orderby.Trim()).Split(' ');
+
+                        sb.AppendFormat(@"
+                            select * from(
+                            select top {4} * from 
+                            (select top {3} * from ({0}) order by {1} asc)
+                            order by {1} desc
+                            ) order by {1} {2}", sql, orderbyArr[0], orderbyArr[1], endRow, startRow);
+                        #endregion
+                        break;
                 }
 
                 List<T> list = FindListBySql<T>(sb.ToString());
@@ -1370,6 +1423,27 @@ namespace DBUtil
                         sb.AppendFormat(" limit {0} offset {1}", pageSize, startRow);
                         #endregion
                         break;
+                    case "access":
+                        #region 分页查询语句
+                        commandText = string.Format("select count(*) from ({0}) T", sql);
+                        cmd = GetCommand(commandText, connection);
+                        foreach (DbParameter parm in cmdParms) cmd.Parameters.Add(parm);
+                        pagerModel.totalRows = int.Parse(cmd.ExecuteScalar().ToString());
+                        cmd.Parameters.Clear();
+
+                        endRow = pageSize * currentPage;
+                        startRow = pageSize * currentPage > pagerModel.totalRows ? pagerModel.totalRows - pageSize * (currentPage - 1) : pageSize;
+                        if (startRow <= 0) { pagerModel.result = new List<T>(); return pagerModel; }
+                        string[] orderbyArr = string.Format("{0} asc", orderby.Trim()).Split(' ');
+
+                        sb.AppendFormat(@"
+                            select * from(
+                            select top {4} * from 
+                            (select top {3} * from ({0}) order by {1} asc)
+                            order by {1} desc
+                            ) order by {1} {2}", sql, orderbyArr[0], orderbyArr[1], endRow, startRow);
+                        #endregion
+                        break;
                 }
 
                 List<T> list = FindListBySql<T>(sb.ToString(), cmdParms);
@@ -1475,6 +1549,27 @@ namespace DBUtil
                             sb.Append(orderby);
                         }
                         sb.AppendFormat(" limit {0} offset {1}", pageSize, startRow);
+                        #endregion
+                        break;
+                    case "access":
+                        #region 分页查询语句
+                        commandText = string.Format("select count(*) from ({0}) T", sql);
+                        cmd = GetCommand(commandText, connection);
+                        foreach (DbParameter parm in cmdParms) cmd.Parameters.Add(parm);
+                        totalCount = int.Parse(cmd.ExecuteScalar().ToString());
+                        cmd.Parameters.Clear();
+
+                        endRow = pageSize * currentPage;
+                        startRow = pageSize * currentPage > totalCount ? totalCount - pageSize * (currentPage - 1) : pageSize;
+                        if (startRow <= 0) { return null; }
+                        string[] orderbyArr = string.Format("{0} asc", orderby.Trim()).Split(' ');
+
+                        sb.AppendFormat(@"
+                            select * from(
+                            select top {4} * from 
+                            (select top {3} * from ({0}) order by {1} asc)
+                            order by {1} desc
+                            ) order by {1} {2}", sql, orderbyArr[0], orderbyArr[1], endRow, startRow);
                         #endregion
                         break;
                 }
@@ -1644,5 +1739,6 @@ namespace DBUtil
         }
         #endregion
         #endregion
+
     }
 }

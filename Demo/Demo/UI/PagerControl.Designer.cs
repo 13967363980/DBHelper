@@ -1,4 +1,4 @@
-﻿namespace XXPLClient.UI
+﻿namespace UI
 {
     partial class PagerControl
     {
