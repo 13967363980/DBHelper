@@ -1,8 +1,16 @@
 # DBHelper
 支持Oracle、MSSQL、MySQL、SQLite四种数据库，配套Model生成器，关系实体映射
 
-为什么自己写DBHelper，而不使用Entity Framework、Dapper等ORM框架？因为就数据查询而言，我更喜欢使用原生SQL，我会把SQL写的很整齐。
+实现了分页查询
 
-此有什么不足？由于本人水平有限，我也不知道有什么不足，尤其是有什么重大隐患。性能？缓存？数据验证？所以放在这里希望有高手共同参与。
+使用了反射
+
+没有实现缓存
+
+参数化查询用起来不够方便，有待改进
+
+为什么自己写DBHelper，而不使用Entity Framework、Dapper等ORM框架？我更喜欢使用原生SQL，然后把查询结果映射到实体类。
+
+为什么不使用Dapper？Dapper还是有点复杂，该DBHelper致力于使用尽可能少的方法或接口、尽可能简单的规则或语法实现增删改查。
 
 我的邮箱：651029594@qq.com
