@@ -72,12 +72,13 @@ namespace Model生成器
                     int i = 0;
                     foreach (Dictionary<string, string> table in tableList) //遍历表
                     {
+                        string tableName = table["table_name"].ToUpper();
                         StringBuilder sbFields = new StringBuilder();
-                        List<Dictionary<string, string>> columnList = dal.GetAllColumns(table["table_name"]);
+                        List<Dictionary<string, string>> columnList = dal.GetAllColumns(tableName);
 
                         #region 原始Model
                         string strClass = strClassTemplate.Replace("#table_comments", table["comments"]);
-                        strClass = strClass.Replace("#table_name", table["table_name"]);
+                        strClass = strClass.Replace("#table_name", tableName);
 
                         foreach (Dictionary<string, string> column in columnList) //遍历字段
                         {
@@ -91,21 +92,21 @@ namespace Model生成器
                             }
 
                             strField = strField.Replace("#data_type", data_type);
-                            strField = strField.Replace("#field_name", column["columns_name"]);
+                            strField = strField.Replace("#field_name", column["columns_name"].ToUpper());
 
                             sbFields.Append(strField);
                         }
 
                         strClass = regField.Replace(strClass, sbFields.ToString());
 
-                        FileHelper.WriteFile(Application.StartupPath + "\\models", strClass, table["table_name"]);
+                        FileHelper.WriteFile(Application.StartupPath + "\\Models", strClass, tableName);
                         #endregion
 
                         #region 扩展Model
                         string strClassExt = strClassExtTemplate.Replace("#table_comments", table["comments"]);
-                        strClassExt = strClassExt.Replace("#table_name", table["table_name"]);
+                        strClassExt = strClassExt.Replace("#table_name", tableName);
 
-                        FileHelper.WriteFile(Application.StartupPath + "\\extmodels", strClassExt.ToString(), table["table_name"]);
+                        FileHelper.WriteFile(Application.StartupPath + "\\ExtModels", strClassExt.ToString(), tableName);
                         #endregion
 
                         #region 操作控件
