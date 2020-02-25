@@ -190,49 +190,54 @@ namespace Demo
         {
             try
             {
-                int k = 0;
-                for (int i = 0; i < 10; i++)
+                if (false)
                 {
-                    Task.Factory.StartNew(new Action(() =>
+                    int k = 0;
+                    for (int i = 0; i < 10; i++)
                     {
-                        try
+                        Task.Factory.StartNew(new Action(() =>
                         {
-                            DBHelper.BeginTransaction();
-
-                            utils_test model = new utils_test();
-                            model.code = k.ToString("0000");
-                            model.name = "测试" + k.ToString();
-                            model.text = "测试" + k.ToString();
-                            model.content = new byte[10];
-                            model.content[1] = (byte)100;
-                            model.content[2] = (byte)99;
-                            model.content[3] = (byte)98;
-                            m_TestMySqlDal.Insert(model);
-
-                            DBHelper.CommitTransaction();
-
-                            k++;
-                            if (k == 100)
+                            try
                             {
-                                MessageBox.Show("插入数据成功");
-                                this.Invoke(new InvokeDelegate(() =>
+                                DBHelper.BeginTransaction();
+
+                                utils_test model = new utils_test();
+                                model.code = k.ToString("0000");
+                                model.name = "测试" + k.ToString();
+                                model.text = "测试" + k.ToString();
+                                model.content = new byte[10];
+                                model.content[1] = (byte)100;
+                                model.content[2] = (byte)99;
+                                model.content[3] = (byte)98;
+                                model.add_time = DateTime.Now;
+                                m_TestMySqlDal.Insert(model);
+
+                                DBHelper.CommitTransaction();
+
+                                k++;
+                                if (k == 100)
                                 {
-                                    BindList();
-                                }));
+                                    MessageBox.Show("插入数据成功");
+                                    this.Invoke(new InvokeDelegate(() =>
+                                    {
+                                        BindList();
+                                    }));
+                                }
                             }
-                        }
-                        catch (Exception ex)
-                        {
-                            DBHelper.RollbackTransaction();
-                            MessageBox.Show(ex.Message);
-                        }
-                    }));
+                            catch (Exception ex)
+                            {
+                                DBHelper.RollbackTransaction();
+                                MessageBox.Show(ex.Message);
+                            }
+                        }));
+                    }
                 }
 
                 Task.Factory.StartNew(() =>
                 {
                     Thread.Sleep(100);
                     List<utils_test> list = m_TestMySqlDal.GetList();
+                    List<utils_test> list2 = m_TestMySqlDal.GetList("测试", DateTime.Now.Date, DateTime.Now.Date.AddDays(1).AddSeconds(-1));
                     MessageBox.Show("成功，list数量：" + list.Count);
                 });
             }
