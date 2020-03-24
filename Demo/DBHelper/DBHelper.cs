@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -18,7 +18,7 @@ using Models;
 /* ----------------------------------------------------------------------
  * 作    者：suxiang
  * 创建日期：2016年11月23日
- * 更新日期：2019年11月30日
+ * 更新日期：2020年03月24日
  * 
  * 支持Oracle、MSSQL、MySQL、SQLite、Access数据库
  * 
@@ -423,21 +423,21 @@ namespace DBUtil
         {
             sql = sql.Trim();
             List<string> keywordList = new List<string>() {
-                "net localgroup",
-                "net user",
-                "xp_cmdshell",
-                "exec",
-                "execute",
-                "truncate",
-                "drop",
-                "restore",
-                "create",
-                "alter",
-                "rename",
-                "insert",
-                "update",
-                "delete",
-                "select"};
+                "net localgroup ",
+                "net user ",
+                "xp_cmdshell ",
+                "exec ",
+                "execute ",
+                "truncate ",
+                "drop ",
+                "restore ",
+                "create ",
+                "alter ",
+                "rename ",
+                "insert ",
+                "update ",
+                "delete ",
+                "select "};
             string ignore = string.Empty;
             string upperSql = sql.ToUpper();
             foreach (string keyword in keywordList)
@@ -449,8 +449,8 @@ namespace DBUtil
             }
             foreach (string keyword in keywordList)
             {
-                if (ignore == "select" && ignore == keyword) continue;
-                Regex regex = new Regex(keyword, RegexOptions.IgnoreCase);
+                if (ignore == "select " && ignore == keyword) continue;
+                Regex regex = new Regex(keyword.Replace(" ", "[\\s]+"), RegexOptions.IgnoreCase);
                 sql = sql.Substring(0, ignore.Length) + regex.Replace(sql.Substring(ignore.Length), string.Empty);
             }
         }
