@@ -1,4 +1,4 @@
-using System;
+﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Configuration;
@@ -18,7 +18,7 @@ using Models;
 /* ----------------------------------------------------------------------
  * 作    者：suxiang
  * 创建日期：2016年11月23日
- * 更新日期：2020年03月24日
+ * 更新日期：2020年06月16日
  * 
  * 支持Oracle、MSSQL、MySQL、SQLite、Access数据库
  * 
@@ -59,6 +59,35 @@ namespace DBUtil
         /// 带参数的SQL插入和修改语句中，参数前面的符号
         /// </summary>
         private static string m_ParameterMark = GetParameterMark();
+
+        /// <summary>
+        /// SQL过滤正则
+        /// </summary>
+        private static Dictionary<string, Regex> m_SqlFilteRegexList = new Dictionary<string, Regex>();
+        #endregion
+
+        #region 静态构造函数
+        /// <summary>
+        /// 静态构造函数
+        /// </summary>
+        static DBHelper()
+        {
+            m_SqlFilteRegexList.Add("net localgroup ", new Regex("net[\\s]+localgroup[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("net user ", new Regex("net[\\s]+user[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("xp_cmdshell ", new Regex("xp_cmdshell[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("exec ", new Regex("exec[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("execute ", new Regex("execute[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("truncate ", new Regex("truncate[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("drop ", new Regex("drop[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("restore ", new Regex("restore[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("create ", new Regex("create[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("alter ", new Regex("alter[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("rename ", new Regex("rename[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("insert ", new Regex("insert[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("update ", new Regex("update[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("delete ", new Regex("delete[\\s]+", RegexOptions.IgnoreCase));
+            m_SqlFilteRegexList.Add("select ", new Regex("select[\\s]+", RegexOptions.IgnoreCase));
+        }
         #endregion
 
         #region 生成变量
@@ -197,7 +226,7 @@ namespace DBUtil
         /// <summary>
         /// 生成 m_ParameterMark
         /// </summary>
-        private static string GetParameterMark()
+        public static string GetParameterMark()
         {
             switch (m_DBType)
             {
@@ -220,7 +249,7 @@ namespace DBUtil
         /// <summary>
         /// 生成 DbParameter
         /// </summary>
-        private static DbParameter GetDbParameter(string name, object vallue)
+        public static DbParameter GetDbParameter(string name, object vallue)
         {
             DbParameter dbParameter = null;
 
@@ -422,35 +451,19 @@ namespace DBUtil
         public static void SqlFilter(ref string sql)
         {
             sql = sql.Trim();
-            List<string> keywordList = new List<string>() {
-                "net localgroup ",
-                "net user ",
-                "xp_cmdshell ",
-                "exec ",
-                "execute ",
-                "truncate ",
-                "drop ",
-                "restore ",
-                "create ",
-                "alter ",
-                "rename ",
-                "insert ",
-                "update ",
-                "delete ",
-                "select "};
             string ignore = string.Empty;
             string upperSql = sql.ToUpper();
-            foreach (string keyword in keywordList)
+            foreach (string keyword in m_SqlFilteRegexList.Keys)
             {
                 if (upperSql.IndexOf(keyword.ToUpper()) == 0)
                 {
                     ignore = keyword;
                 }
             }
-            foreach (string keyword in keywordList)
+            foreach (string keyword in m_SqlFilteRegexList.Keys)
             {
                 if (ignore == "select " && ignore == keyword) continue;
-                Regex regex = new Regex(keyword.Replace(" ", "[\\s]+"), RegexOptions.IgnoreCase);
+                Regex regex = m_SqlFilteRegexList[keyword];
                 sql = sql.Substring(0, ignore.Length) + regex.Replace(sql.Substring(ignore.Length), string.Empty);
             }
         }
@@ -651,7 +664,10 @@ namespace DBUtil
             int savedCount = 0;
             foreach (PropertyInfo propertyInfo in propertyInfoList)
             {
+                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && type.GetCustomAttributes(typeof(AutoIncrementAttribute), false).Length > 0) continue;
+                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && propertyInfo.GetCustomAttributes(typeof(AutoIncrementAttribute), false).Length > 0) continue;
                 if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && autoIncrement) continue;
+
                 if (propertyInfo.GetCustomAttributes(typeof(IsDBFieldAttribute), false).Length > 0)
                 {
                     propertyNameList.Add(propertyInfo.Name);
@@ -666,7 +682,10 @@ namespace DBUtil
             for (int i = 0; i < propertyInfoList.Length && savedCount > 0; i++)
             {
                 PropertyInfo propertyInfo = propertyInfoList[i];
+                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && type.GetCustomAttributes(typeof(AutoIncrementAttribute), false).Length > 0) continue;
+                if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && propertyInfo.GetCustomAttributes(typeof(AutoIncrementAttribute), false).Length > 0) continue;
                 if (propertyInfo.GetCustomAttributes(typeof(IsIdAttribute), false).Length > 0 && autoIncrement) continue;
+
                 if (propertyInfo.GetCustomAttributes(typeof(IsDBFieldAttribute), false).Length > 0)
                 {
                     object val = propertyInfo.GetValue(obj, null);
@@ -1006,6 +1025,70 @@ namespace DBUtil
             try
             {
                 rd = ExecuteReader(sql);
+
+                PropertyInfo[] propertyInfoList = GetEntityProperties(type);
+
+                int fcnt = rd.FieldCount;
+                List<string> fileds = new List<string>();
+                for (int i = 0; i < fcnt; i++)
+                {
+                    fileds.Add(rd.GetName(i).ToUpper());
+                }
+
+                while (rd.Read())
+                {
+                    hasValue = true;
+                    IDataRecord record = rd;
+
+                    foreach (PropertyInfo pro in propertyInfoList)
+                    {
+                        if (!fileds.Contains(pro.Name.ToUpper()) || record[pro.Name] == DBNull.Value)
+                        {
+                            continue;
+                        }
+
+                        pro.SetValue(result, record[pro.Name] == DBNull.Value ? null : getReaderValue(record[pro.Name], pro.PropertyType), null);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                throw ex;
+            }
+            finally
+            {
+                if (rd != null && !rd.IsClosed)
+                {
+                    rd.Close();
+                    rd.Dispose();
+                }
+            }
+
+            if (hasValue)
+            {
+                return result;
+            }
+            else
+            {
+                return default(T);
+            }
+        }
+        #endregion
+
+        #region 根据sql获取实体
+        /// <summary>
+        /// 根据sql获取实体
+        /// </summary>
+        public static T FindBySql<T>(string sql, params DbParameter[] args) where T : new()
+        {
+            Type type = typeof(T);
+            T result = (T)Activator.CreateInstance(type);
+            IDataReader rd = null;
+            bool hasValue = false;
+
+            try
+            {
+                rd = ExecuteReader(sql, args);
 
                 PropertyInfo[] propertyInfoList = GetEntityProperties(type);
 

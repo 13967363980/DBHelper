@@ -11,24 +11,32 @@ using DAL;
 using DBUtil;
 using Models;
 using System.Threading;
+using Utils;
 
 namespace Demo
 {
     public partial class Form1 : Form
     {
+        private TaskSchedulerEx _task = null;
         private TemplateDal m_TemplateDal = new TemplateDal();
         private TestDal m_TestDal = new TestDal();
         private TestMySqlDal m_TestMySqlDal = new TestMySqlDal();
 
+        #region Form1
         public Form1()
         {
             InitializeComponent();
+            ThreadPool.SetMinThreads(128, 128);
+            _task = new TaskSchedulerEx(128, 128);
         }
+        #endregion
 
+        #region Form1_Load
         private void Form1_Load(object sender, EventArgs e)
         {
             BindList();
         }
+        #endregion
 
         #region 绑定列表
         /// <summary>
@@ -77,19 +85,27 @@ namespace Demo
         }
         #endregion
 
-        //翻页事件
+        #region pagerControl1_PageChanged 翻页事件
+        /// <summary>
+        /// 翻页事件
+        /// </summary>
         private void pagerControl1_PageChanged()
         {
             BindList();
         }
+        #endregion
 
-        //刷新数据
+        #region pagerControl1_RefreshData 刷新数据
+        /// <summary>
+        /// 刷新数据
+        /// </summary>
         private void pagerControl1_RefreshData()
         {
             BindList();
         }
+        #endregion
 
-        //测试新增
+        #region button1_Click 测试新增
         private void button1_Click(object sender, EventArgs e)
         {
             int k = 0;
@@ -123,7 +139,7 @@ namespace Demo
                         if (k == 100)
                         {
                             MessageBox.Show("插入数据成功");
-                            this.Invoke(new InvokeDelegate(() =>
+                            this.Invoke(new Action(() =>
                             {
                                 BindList();
                             }));
@@ -137,8 +153,9 @@ namespace Demo
                 }));
             }
         }
+        #endregion
 
-        //测试修改
+        #region button2_Click 测试修改
         private void button2_Click(object sender, EventArgs e)
         {
             Random rnd = new Random();
@@ -163,8 +180,9 @@ namespace Demo
                 MessageBox.Show("修改失败：" + ex.Message);
             }
         }
+        #endregion
 
-        //测试删除
+        #region button3_Click 测试删除
         private void button3_Click(object sender, EventArgs e)
         {
             try
@@ -185,72 +203,114 @@ namespace Demo
                 MessageBox.Show("修改失败：" + ex.Message);
             }
         }
+        #endregion
 
+        #region 测试MySQL
         private void btnTestMySQL_Click(object sender, EventArgs e)
         {
             try
             {
+                #region 新增数据
                 if (false)
                 {
-                    int k = 0;
-                    for (int i = 0; i < 10; i++)
+                    _task.Run(() =>
                     {
-                        Task.Factory.StartNew(new Action(() =>
+                        int n = 1000;
+                        DateTime dt = DateTime.Now;
+                        List<Task> tList = new List<Task>();
+                        for (int i = 1; i <= n; i++)
                         {
-                            try
+                            Task t = _task.Run((obj) =>
                             {
-                                DBHelper.BeginTransaction();
+                                var k = (int)obj;
 
-                                utils_test model = new utils_test();
-                                model.code = k.ToString("0000");
-                                model.name = "测试" + k.ToString();
-                                model.text = "测试" + k.ToString();
-                                model.content = new byte[10];
-                                model.content[1] = (byte)100;
-                                model.content[2] = (byte)99;
-                                model.content[3] = (byte)98;
-                                model.add_time = DateTime.Now;
-                                m_TestMySqlDal.Insert(model);
-
-                                DBHelper.CommitTransaction();
-
-                                k++;
-                                if (k == 100)
+                                try
                                 {
-                                    MessageBox.Show("插入数据成功");
-                                    this.Invoke(new InvokeDelegate(() =>
-                                    {
-                                        BindList();
-                                    }));
-                                }
-                            }
-                            catch (Exception ex)
-                            {
-                                DBHelper.RollbackTransaction();
-                                MessageBox.Show(ex.Message);
-                            }
-                        }));
-                    }
-                }
+                                    DBHelper.BeginTransaction();
 
-                Task.Factory.StartNew(() =>
+                                    utils_test model = new utils_test();
+                                    model.code = k.ToString("0000");
+                                    model.name = "测试" + k.ToString();
+                                    model.text = "测试" + k.ToString();
+                                    model.content = new byte[10];
+                                    model.content[1] = (byte)100;
+                                    model.content[2] = (byte)99;
+                                    model.content[3] = (byte)98;
+                                    model.add_time = DateTime.Now;
+                                    m_TestMySqlDal.Insert(model);
+
+                                    DBHelper.CommitTransaction();
+                                }
+                                catch (Exception ex)
+                                {
+                                    DBHelper.RollbackTransaction();
+                                    MessageBox.Show(ex.Message);
+                                }
+                            }, i);
+                            tList.Add(t);
+                        }
+                        Task.WaitAll(tList.ToArray());
+                        double d = DateTime.Now.Subtract(dt).TotalSeconds;
+                        MessageBox.Show(n + "条数据插入完成，耗时：" + d.ToString("0.000") + "秒");
+                        this.Invoke(new Action(() =>
+                        {
+                            BindList();
+                        }));
+                    });
+                }
+                #endregion
+
+                #region 查询数据
+                if (true)
                 {
-                    Thread.Sleep(100);
-                    List<utils_test> list = m_TestMySqlDal.GetList();
-                    List<utils_test> list2 = m_TestMySqlDal.GetList("测试", DateTime.Now.Date, DateTime.Now.Date.AddDays(1).AddSeconds(-1));
-                    MessageBox.Show("成功，list数量：" + list.Count);
-                });
+                    Task.Factory.StartNew(() =>
+                    {
+                        try
+                        {
+                            Thread.Sleep(100);
+                            DateTime dt = DateTime.Now;
+                            utils_test info = m_TestMySqlDal.Get("测试1");
+                            List<utils_test> list1 = m_TestMySqlDal.GetList3("测试", DateTime.Now.Date, DateTime.Now.Date.AddDays(1).AddSeconds(-1));
+                            double d = DateTime.Now.Subtract(dt).TotalSeconds;
+                            MessageBox.Show("成功，list1总数：" + list1.Count + "，耗时：" + d.ToString("0.000") + "秒");
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        }
+                    });
+                }
+                #endregion
+
+                #region 查询数据
+                if (false)
+                {
+                    Task.Factory.StartNew(() =>
+                    {
+                        try
+                        {
+                            Thread.Sleep(100);
+                            List<TWO_ORDER> list1 = m_TestMySqlDal.GetList("Shao", new DateTime(2020, 5, 1, 0, 0, 0), new DateTime(2020, 5, 15, 0, 0, 0), 1);
+                            PagerModel pager = new PagerModel(2, 10);
+                            List<TWO_ORDER> list2 = m_TestMySqlDal.GetListPage(ref pager, "Guo", new DateTime(2020, 5, 1, 0, 0, 0), new DateTime(2020, 5, 15, 0, 0, 0), 1);
+                            MessageBox.Show("成功，list1总数：" + list1.Count + "，list2总数：" + pager.totalRows + "，当前页：" + pager.page + "，当前页数量：" + list2.Count);
+                        }
+                        catch (Exception ex)
+                        {
+                            MessageBox.Show(ex.Message);
+                        }
+                    });
+                }
+                #endregion
+
             }
             catch (Exception ex)
             {
                 MessageBox.Show(ex.Message);
             }
         }
-    } //end of class Form1
+        #endregion
 
-    /// <summary>
-    /// 跨线程访问控件的委托
-    /// </summary>
-    public delegate void InvokeDelegate();
+    } //end of class Form1
 
 }

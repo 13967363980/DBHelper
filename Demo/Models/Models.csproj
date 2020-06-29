@@ -42,13 +42,16 @@
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AutoIncrementAttribute.cs" />
     <Compile Include="Enums\Enums.cs" />
     <Compile Include="ExtModels\BS_Template.cs" />
     <Compile Include="ExtModels\BS_Test.cs" />
+    <Compile Include="ExtModels\utils_test.cs" />
     <Compile Include="IsDBFieldAttribute.cs" />
     <Compile Include="IsIdAttribute.cs" />
     <Compile Include="Models\BS_Template.cs" />
     <Compile Include="Models\BS_Test.cs" />
+    <Compile Include="Models\TWO_ORDER.cs" />
     <Compile Include="Models\utils_test.cs" />
     <Compile Include="PagerModel.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
