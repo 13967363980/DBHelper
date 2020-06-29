@@ -94,6 +94,8 @@ namespace DAL
             string data_type = "string";
             switch (column["data_type"])
             {
+                case "tinyint":
+                case "smallint":
                 case "int":
                     if (column["notnull"] == "1")
                     {
@@ -114,6 +116,7 @@ namespace DAL
                         data_type = "long?";
                     }
                     break;
+                case "float":
                 case "decimal":
                     if (column["notnull"] == "1")
                     {
@@ -124,6 +127,9 @@ namespace DAL
                         data_type = "decimal?";
                     }
                     break;
+                case "char":
+                    data_type = "string";
+                    break;
                 case "varchar":
                     data_type = "string";
                     break;
@@ -133,9 +139,12 @@ namespace DAL
                 case "longtext":
                     data_type = "string";
                     break;
+                case "longblob":
                 case "blob":
                     data_type = "byte[]";
                     break;
+                case "time":
+                case "date":
                 case "datetime":
                     if (column["notnull"] == "1")
                     {
