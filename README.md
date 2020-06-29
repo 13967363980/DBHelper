@@ -7,7 +7,7 @@
 
 没有实现缓存
 
-参数化查询用起来不够方便，有待改进
+通过 SqlString 类提供非常方便的参数化查询
 
 为什么自己写DBHelper，而不使用Entity Framework、Dapper等ORM框架？我更喜欢使用原生SQL，然后把查询结果映射到实体类。
 
