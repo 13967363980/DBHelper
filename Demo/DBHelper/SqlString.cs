@@ -29,7 +29,7 @@ namespace DBUtil
 
         private List<DbParameter> _paramList = new List<DbParameter>();
 
-        private Regex _regex = new Regex(@"[@|:]([\w]+)", RegexOptions.IgnoreCase);
+        private Regex _regex = new Regex(@"[@|:]([a-zA-Z_]{1}[a-zA-Z0-9_]+)", RegexOptions.IgnoreCase);
 
         /// <summary>
         /// 参数化查询的参数
